@@ -1,33 +1,65 @@
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { Box, TextField, Button, Grid } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import Message from "./Message";
-
-const messages = [
-  { id: 1, text: "Hi!", sender: "Henry", upvotes: 1, downvotes: 10 },
-  { id: 2, text: "Hello!", sender: "Jess", upvotes: 13, downvotes: 0 },
-  {
-    id: 3,
-    text: "How are you?",
-    sender: "Henry",
-    upvotes: 15,
-    downvotes: 16,
-  },
-];
+import { useLocation } from "react-router-dom";
+import useWebSocket, { ReadyState } from "react-use-websocket";
 
 export default function Chat() {
+  const location = useLocation();
+  const username = location.state.username;
+  console.log(location);
+
+  const [socketUrl, setSocketUrl] = useState(
+    `ws://localhost:8081/ws?token=${location.state.token}`
+  );
+  console.log(socketUrl);
+  const [messageHistory, setMessageHistory] = useState([]);
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
+    socketUrl,
+    {
+      onOpen: () => console.log("opened"),
+      //Will attempt to reconnect on all close events, such as server shutting down
+      shouldReconnect: (closeEvent) => true,
+    }
+  );
+
+  useEffect(() => {
+    if (lastJsonMessage !== null) {
+      setMessageHistory((prev) => prev.concat(lastJsonMessage));
+    }
+  }, [lastJsonMessage, setMessageHistory]);
+  console.log(messageHistory);
   const [input, setInput] = React.useState("");
 
   const handleSend = () => {
     if (input.trim() !== "") {
       console.log(input);
+      console.log("sendingggg....");
       setInput("");
+      sendJsonMessage({
+        id: "",
+        content: input,
+        sender: username,
+        upvotes: 0,
+        downvotes: 0,
+        timestamp: -1,
+      });
     }
   };
 
   const handleInputChange = (event) => {
     setInput(event.target.value);
   };
+
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: "Connecting",
+    [ReadyState.OPEN]: "Open",
+    [ReadyState.CLOSING]: "Closing",
+    [ReadyState.CLOSED]: "Closed",
+    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
+  }[readyState];
 
   return (
     <Box
@@ -39,8 +71,13 @@ export default function Chat() {
       }}
     >
       <Box sx={{ flexGrow: 1, overflow: "auto", p: 2 }}>
-        {messages.map((message) => (
-          <Message key={message.id} message={message} />
+        {messageHistory.map((message, idx) => (
+          <Message
+            key={idx}
+            message={message}
+            isSelf={message.Sender === username}
+            onSendJsonMessage={sendJsonMessage}
+          />
         ))}
       </Box>
       <Box sx={{ p: 2, backgroundColor: "background.default" }}>
@@ -61,6 +98,7 @@ export default function Chat() {
               variant="contained"
               endIcon={<SendIcon />}
               onClick={handleSend}
+              disabled={readyState !== ReadyState.OPEN}
             >
               Send
             </Button>

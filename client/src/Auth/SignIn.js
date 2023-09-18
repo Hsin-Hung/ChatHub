@@ -10,18 +10,28 @@ import {
   createTheme,
   ThemeProvider,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { signIn } from "../api/api";
 
 const defaultTheme = createTheme();
 
 export default function SignIn() {
-  const handleSubmit = (event) => {
+  const navigate = useNavigate();
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-    });
+    const username = data.get("username");
+    const password = data.get("password");
+
+    try {
+      const res = await signIn(username, password);
+      console.log(res.data.token);
+      navigate("/chat", {
+        state: { token: res.data.token, username: username },
+      });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -49,10 +59,10 @@ export default function SignIn() {
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
+              id="username"
+              label="Username"
+              name="username"
+              autoComplete="username"
               autoFocus
             />
             <TextField
