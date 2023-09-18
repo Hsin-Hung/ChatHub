@@ -1,11 +1,11 @@
 package db
 
 import (
-	"chat-server/utils"
 	"context"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Message struct {
@@ -17,14 +17,7 @@ type Message struct {
 	Timestamp int64  `bson:"timestamp"`
 }
 
-func StoreMessage(message *Message) error {
-
-	id, err := utils.Generate_id()
-	if err != nil {
-		return err
-	}
-	message.Id = id
-	message.Timestamp = utils.Generate_timestamp()
+func StoreMessage(message Message) error {
 
 	// Send a ping to confirm a successful connection
 	coll := GetDBClient().Database("chat").Collection("messages")
@@ -37,7 +30,7 @@ func StoreMessage(message *Message) error {
 	return nil
 }
 
-func UpdateVotes(message Message) error {
+func UpdateVotes(message Message) (Message, error) {
 
 	coll := GetDBClient().Database("chat").Collection("messages")
 
@@ -48,13 +41,14 @@ func UpdateVotes(message Message) error {
 	} else if message.Downvotes != 0 {
 		update = bson.D{{"$inc", bson.D{{"downvotes", message.Downvotes}}}}
 	}
-
-	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(1)
+	var new_message Message
+	err := coll.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&new_message)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	fmt.Printf("Update document vote with _id: %v\n", result)
-	return nil
+	fmt.Printf("Update document vote with _id: %v\n", new_message)
+	return new_message, nil
 
 }

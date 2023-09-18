@@ -80,10 +80,8 @@ func (c *Client) readPump() {
 		fmt.Println(message)
 		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		if message.Id != "" {
-			log.Printf("update the vote")
 			c.hub.vote <- message
 		} else {
-			log.Printf("broadcasting...")
 			c.hub.broadcast <- message
 		}
 
