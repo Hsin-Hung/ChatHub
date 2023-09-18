@@ -16,6 +16,7 @@ export default function Chat() {
   );
   console.log(socketUrl);
   const [messageHistory, setMessageHistory] = useState([]);
+  const [messageIndex, setMessageIndex] = useState({});
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
     socketUrl,
     {
@@ -27,7 +28,24 @@ export default function Chat() {
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
+      console.log(messageIndex);
+      console.log(lastJsonMessage.Id);
+      if (lastJsonMessage.Id in messageIndex) {
+        setMessageHistory((prev) => {
+          const updatedMessageHistory = [...prev];
+          updatedMessageHistory[
+            messageIndex[lastJsonMessage.Id]
+          ] = lastJsonMessage;
+          return updatedMessageHistory;
+        });
+        return;
+      }
+      const messageHistoryLength = messageHistory.length;
       setMessageHistory((prev) => prev.concat(lastJsonMessage));
+      setMessageIndex((prev) => ({
+        ...prev,
+        [lastJsonMessage.Id]: messageHistoryLength,
+      }));
     }
   }, [lastJsonMessage, setMessageHistory]);
   console.log(messageHistory);
@@ -35,8 +53,6 @@ export default function Chat() {
 
   const handleSend = () => {
     if (input.trim() !== "") {
-      console.log(input);
-      console.log("sendingggg....");
       setInput("");
       sendJsonMessage({
         id: "",
