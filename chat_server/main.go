@@ -1,0 +1,34 @@
+// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package main
+
+import (
+	"flag"
+	"log"
+
+	"chat-server/chat"
+	"chat-server/middlewares"
+
+	"chat-server/db"
+
+	"github.com/gin-gonic/gin"
+)
+
+var addr = flag.String("addr", ":8081", "http service address")
+
+func main() {
+	db.ConnectDB()
+	flag.Parse()
+	hub := chat.NewHub()
+	go hub.Run()
+
+	r := gin.Default()
+	r.Use(middlewares.JwtAuthMiddleware())
+	r.GET("/ws", func(c *gin.Context) {
+		chat.ServeWs(hub, c)
+	})
+	log.Fatal(r.Run(*addr))
+
+}
