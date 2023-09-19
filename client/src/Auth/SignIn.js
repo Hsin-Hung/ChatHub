@@ -1,6 +1,8 @@
 import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   Button,
+  Alert,
   CssBaseline,
   TextField,
   Grid,
@@ -11,26 +13,58 @@ import {
   ThemeProvider,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { signIn } from "../api/api";
+import { signIn, authUser } from "../api/api";
 
 const defaultTheme = createTheme();
 
 export default function SignIn() {
   const navigate = useNavigate();
+  useEffect(() => {
+    const authUserStatus = async () => {
+      const token = localStorage.getItem("token");
+      if (token != null) {
+        try {
+          const res = await authUser(token);
+          if (res.status === 200) {
+            navigate("/home");
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    };
+
+    authUserStatus().catch(console.error);
+  }, []);
+
+  const [showAlert, setShowAlert] = useState({
+    status: "",
+    value: "",
+  });
+  const [buttonDisabled, setButtonDisabled] = useState(false);
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setButtonDisabled(true);
     const data = new FormData(event.currentTarget);
     const username = data.get("username");
     const password = data.get("password");
 
     try {
       const res = await signIn(username, password);
-      console.log(res.data.token);
-      navigate("/chat", {
-        state: { token: res.data.token, username: username },
-      });
+      localStorage.setItem("username", username);
+      localStorage.setItem("token", res.data.token);
+      navigate("/home");
     } catch (err) {
-      console.log(err);
+      let errResponse = err.message;
+      if (err.hasOwnProperty("response")) {
+        errResponse = err.response.data.error;
+      }
+      setShowAlert({
+        status: "error",
+        value: `Failed to sign in: ${errResponse}`,
+      });
+    } finally {
+      setButtonDisabled(false);
     }
   };
 
@@ -80,13 +114,24 @@ export default function SignIn() {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={buttonDisabled}
             >
               Sign In
             </Button>
-            <Grid container>
+            <Grid
+              container
+              rowSpacing={1}
+              justifyContent="center"
+              direction="column"
+            >
               <Grid item>
                 <Link to="/signup">Don't have an account? Sign Up"</Link>
               </Grid>
+              {showAlert.status && (
+                <Grid item>
+                  <Alert severity={showAlert.status}>{showAlert.value}</Alert>
+                </Grid>
+              )}
             </Grid>
           </Box>
         </Box>

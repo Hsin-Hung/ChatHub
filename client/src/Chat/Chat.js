@@ -3,7 +3,6 @@ import { useState, useEffect, useReducer } from "react";
 import { Box, TextField, Button, Grid } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import Message from "./Message";
-import { useLocation } from "react-router-dom";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
 function reducer(state, action) {
@@ -28,11 +27,11 @@ function reducer(state, action) {
 }
 
 export default function Chat() {
-  const location = useLocation();
-  const username = location.state.username;
+  const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
 
   const [socketUrl, setSocketUrl] = useState(
-    `ws://localhost:8081/ws?token=${location.state.token}`
+    `ws://localhost:8081/ws?token=${token}`
   );
   const [chatState, dispatch] = useReducer(reducer, [[], {}]);
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
@@ -43,6 +42,14 @@ export default function Chat() {
       shouldReconnect: (closeEvent) => true,
     }
   );
+
+  const _ = {
+    [ReadyState.CONNECTING]: "Connecting",
+    [ReadyState.OPEN]: "Open",
+    [ReadyState.CLOSING]: "Closing",
+    [ReadyState.CLOSED]: "Closed",
+    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
+  }[readyState];
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
@@ -73,14 +80,6 @@ export default function Chat() {
   const handleInputChange = (event) => {
     setInput(event.target.value);
   };
-
-  const connectionStatus = {
-    [ReadyState.CONNECTING]: "Connecting",
-    [ReadyState.OPEN]: "Open",
-    [ReadyState.CLOSING]: "Closing",
-    [ReadyState.CLOSED]: "Closed",
-    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
-  }[readyState];
 
   return (
     <Box

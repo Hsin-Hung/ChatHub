@@ -1,6 +1,8 @@
 import * as React from "react";
+import { useState } from "react";
 import {
   Button,
+  Alert,
   CssBaseline,
   TextField,
   Grid,
@@ -10,23 +12,43 @@ import {
   createTheme,
   ThemeProvider,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { signUp } from "../api/api";
 
 const defaultTheme = createTheme();
 
 export default function SignUp() {
+  const navigate = useNavigate();
+  const [showAlert, setShowAlert] = useState({
+    status: "",
+    value: "",
+  });
+  const [buttonDisabled, setButtonDisabled] = useState(false);
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setButtonDisabled(true);
     const data = new FormData(event.currentTarget);
     const username = data.get("username");
     const password = data.get("password");
-
     try {
       const res = await signUp(username, password);
       console.log(res);
+      setShowAlert({
+        status: "success",
+        value: res.data.message,
+      });
+      navigate("/signin");
     } catch (err) {
-      console.log(err);
+      let errResponse = err.message;
+      if (err.hasOwnProperty("response")) {
+        errResponse = err.response.data.error;
+      }
+      setShowAlert({
+        status: "error",
+        value: `Failed to sign in: ${errResponse}`,
+      });
+    } finally {
+      setButtonDisabled(false);
     }
   };
 
@@ -81,13 +103,24 @@ export default function SignUp() {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={buttonDisabled}
             >
               Sign Up
             </Button>
-            <Grid container justifyContent="flex-end">
+            <Grid
+              container
+              rowSpacing={1}
+              justifyContent="center"
+              direction="column"
+            >
               <Grid item>
                 <Link to="/signin">Already have an account? Sign in</Link>
               </Grid>
+              {showAlert.status && (
+                <Grid item>
+                  <Alert severity={showAlert.status}>{showAlert.value}</Alert>
+                </Grid>
+              )}
             </Grid>
           </Box>
         </Box>

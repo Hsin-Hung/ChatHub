@@ -1,0 +1,46 @@
+import * as React from "react";
+import AppBar from "@mui/material/AppBar";
+import Grid from "@mui/material/Grid";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import Chat from "./Chat";
+import { useNavigate } from "react-router-dom";
+
+export default function ChatRoom() {
+  const navigate = useNavigate();
+  const home = () => {
+    navigate("/home");
+  };
+
+  return (
+    <Grid container spacing={0} style={{ minHeight: "80vh" }}>
+      <Grid item xs={12}>
+        <AppBar position="static">
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              Simple Chat
+            </Typography>
+            <Button color="inherit" onClick={home}>
+              Home
+            </Button>
+          </Toolbar>
+        </AppBar>
+      </Grid>
+      <Grid item xs={12}>
+        <Chat />
+      </Grid>
+    </Grid>
+  );
+}

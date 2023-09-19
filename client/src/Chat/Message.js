@@ -21,22 +21,22 @@ export default function Message({ message, isSelf, onSendJsonMessage }) {
   const handleUpVote = () => {
     onSendJsonMessage({
       id: message.Id,
-      content: message.Content,
-      sender: message.Sender,
+      content: "",
+      sender: "",
       upvotes: 1,
       downvotes: 0,
-      timestamp: message.Timestamp,
+      timestamp: 0,
     });
   };
 
   const handleDownVote = () => {
     onSendJsonMessage({
       id: message.Id,
-      content: message.Content,
-      sender: message.Sender,
+      content: "",
+      sender: "",
       upvotes: 0,
       downvotes: 1,
-      timestamp: message.Timestamp,
+      timestamp: 0,
     });
   };
 
