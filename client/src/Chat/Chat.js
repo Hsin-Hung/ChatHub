@@ -1,22 +1,40 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { Box, TextField, Button, Grid } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import Message from "./Message";
 import { useLocation } from "react-router-dom";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
+function reducer(state, action) {
+  let newState;
+  let newMessage = action.payload;
+  switch (action.type) {
+    case "new_msg":
+      newState = [
+        state[0].concat(newMessage),
+        { ...state[1], [newMessage.Id]: state[0].length },
+      ];
+      break;
+    case "update_msg":
+      let updatedMessageHistory = [...state[0]];
+      updatedMessageHistory[state[1][newMessage.Id]] = newMessage;
+      newState = [updatedMessageHistory, { ...state[1] }];
+      break;
+    default:
+      throw new Error();
+  }
+  return newState;
+}
+
 export default function Chat() {
   const location = useLocation();
   const username = location.state.username;
-  console.log(location);
 
   const [socketUrl, setSocketUrl] = useState(
     `ws://localhost:8081/ws?token=${location.state.token}`
   );
-  console.log(socketUrl);
-  const [messageHistory, setMessageHistory] = useState([]);
-  const [messageIndex, setMessageIndex] = useState({});
+  const [chatState, dispatch] = useReducer(reducer, [[], {}]);
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
     socketUrl,
     {
@@ -28,27 +46,14 @@ export default function Chat() {
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
-      console.log(messageIndex);
-      console.log(lastJsonMessage.Id);
-      if (lastJsonMessage.Id in messageIndex) {
-        setMessageHistory((prev) => {
-          const updatedMessageHistory = [...prev];
-          updatedMessageHistory[
-            messageIndex[lastJsonMessage.Id]
-          ] = lastJsonMessage;
-          return updatedMessageHistory;
-        });
+      if (lastJsonMessage.Id in chatState[1]) {
+        dispatch({ type: "update_msg", payload: lastJsonMessage });
         return;
       }
-      const messageHistoryLength = messageHistory.length;
-      setMessageHistory((prev) => prev.concat(lastJsonMessage));
-      setMessageIndex((prev) => ({
-        ...prev,
-        [lastJsonMessage.Id]: messageHistoryLength,
-      }));
+      dispatch({ type: "new_msg", payload: lastJsonMessage });
     }
-  }, [lastJsonMessage, setMessageHistory]);
-  console.log(messageHistory);
+  }, [lastJsonMessage]);
+
   const [input, setInput] = React.useState("");
 
   const handleSend = () => {
@@ -87,7 +92,7 @@ export default function Chat() {
       }}
     >
       <Box sx={{ flexGrow: 1, overflow: "auto", p: 2 }}>
-        {messageHistory.map((message, idx) => (
+        {chatState[0].map((message, idx) => (
           <Message
             key={idx}
             message={message}
