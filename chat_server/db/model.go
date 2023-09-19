@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -17,11 +18,21 @@ type Message struct {
 	Timestamp int64  `bson:"timestamp"`
 }
 
+func GetMessageHistory() (*mongo.Cursor, error) {
+
+	coll := GetDBClient().Database("chat").Collection("messages")
+	cur, err := coll.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	return cur, nil
+}
+
 func StoreMessage(message Message) error {
 
 	// Send a ping to confirm a successful connection
 	coll := GetDBClient().Database("chat").Collection("messages")
-	result, err := coll.InsertOne(context.TODO(), message)
+	result, err := coll.InsertOne(context.Background(), message)
 	if err != nil {
 		return err
 	}
@@ -43,7 +54,7 @@ func UpdateVotes(message Message) (Message, error) {
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(1)
 	var new_message Message
-	err := coll.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&new_message)
+	err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
 	if err != nil {
 		panic(err)
 	}

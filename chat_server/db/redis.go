@@ -1,8 +1,11 @@
 package db
 
 import (
-	"github.com/redis/go-redis/v9"
 	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var redis_client *redis.Client
@@ -15,32 +18,36 @@ func ConnectRedis() {
 	})
 }
 
-func GetRedisClient() *redis.Client {
-	return redis_client
-}
-
-func RegisterClient(username string){
-
-	ctx := context.Background()
-
-	err := redis_client.Set(ctx, username, "online", 0).Err()
+func PublishMessage(message Message) error {
+	fmt.Println("publish message")
+	payload, err := json.Marshal(message)
 	if err != nil {
 		panic(err)
 	}
-
+	if err := redis_client.Publish(context.Background(), "new_message", payload).Err(); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 
 }
 
-// func DoesClientExist(username string){
+func SubscribeMessage(subcribe chan Message){
 
-// 	ctx := context.Background()
+	subscriber := redis_client.Subscribe(context.Background(), "new_message")
+	defer subscriber.Close()
+	// var message Message
+	var message Message
+	for {
+		msg, err := subscriber.ReceiveMessage(context.Background())
+		if err != nil {
+			panic(err)
+		}
+		if err := json.Unmarshal([]byte(msg.Payload), &message); err != nil {
+			panic(err)
+		}
+		fmt.Println(message)
+		subcribe <- message
+	}
 
-// 	val, err := redis_client.Get(ctx, username).Result()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-
-
-// }
-
+}

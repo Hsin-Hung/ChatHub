@@ -7,7 +7,9 @@ package chat
 import (
 	// "encoding/json"
 	"chat-server/db"
-	"chat-server/utils"
+	"context"
+	"fmt"
+	"log"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -19,8 +21,8 @@ type Hub struct {
 	// Inbound messages from the clients.
 	broadcast chan db.Message
 
-	// Inbound votes for messages from the clients.
-	vote chan db.Message
+	// Publish Inbound messages to other chat servers
+	publish chan db.Message
 
 	// Register requests from the clients.
 	register chan *Client
@@ -32,11 +34,16 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan db.Message, 10),
-		vote:       make(chan db.Message, 10),
+		publish:    make(chan db.Message, 10),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 	}
+}
+
+func (h *Hub) GetSubChannel() chan db.Message {
+
+	return h.broadcast
 }
 
 func (h *Hub) Run() {
@@ -44,23 +51,30 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
+			cur, _ := db.GetMessageHistory()
+			for cur.Next(context.Background()) {
+				// To decode into a struct, use cursor.Decode()
+				var message db.Message
+				err := cur.Decode(&message)
+				fmt.Println("history data")
+				fmt.Println(message)
+				if err != nil {
+					log.Fatal(err)
+				}
+				// do something with result...
+				client.send <- message
+			}
+			if err := cur.Err(); err != nil {
+				panic(err)
+			}
+			cur.Close(context.Background())
+
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
 			}
 		case message := <-h.broadcast:
-
-			id, err := utils.Generate_id()
-			if err != nil {
-				panic(err)
-			}
-			message.Id = id
-			message.Timestamp = utils.Generate_timestamp()
-
-			if err := db.StoreMessage(message); err != nil {
-				continue
-			}
 			for client := range h.clients {
 				select {
 				case client.send <- message:
@@ -69,9 +83,8 @@ func (h *Hub) Run() {
 					delete(h.clients, client)
 				}
 			}
-		case message := <-h.vote:
-			new_message, _ := db.UpdateVotes(message)
-			h.broadcast <- new_message
+		case message := <-h.publish:
+			db.PublishMessage(message)
 		}
 	}
 }

@@ -16,13 +16,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var addr = flag.String("addr", ":8081", "http service address")
+var addr = flag.String("addr", ":8082", "http service address")
 
 func main() {
 	db.ConnectDB()
+	db.ConnectRedis()
 	flag.Parse()
 	hub := chat.NewHub()
 	go hub.Run()
+	go db.SubscribeMessage(hub.GetSubChannel())
 
 	r := gin.Default()
 	r.Use(middlewares.JwtAuthMiddleware())

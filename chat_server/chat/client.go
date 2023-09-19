@@ -6,7 +6,7 @@ package chat
 
 import (
 	"chat-server/db"
-	"encoding/json"
+	"chat-server/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -80,9 +80,21 @@ func (c *Client) readPump() {
 		fmt.Println(message)
 		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		if message.Id != "" {
-			c.hub.vote <- message
+			new_message, _ := db.UpdateVotes(message)
+			c.hub.publish <- new_message
 		} else {
-			c.hub.broadcast <- message
+			id, err := utils.Generate_id()
+			if err != nil {
+				panic(err)
+			}
+			message.Id = id
+			message.Timestamp = utils.Generate_timestamp()
+
+			if err := db.StoreMessage(message); err != nil {
+				continue
+			}
+			c.hub.publish <- message
+			// c.hub.broadcast <- message
 		}
 
 	}
@@ -108,28 +120,8 @@ func (c *Client) writePump() {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			fmt.Println(message)
-			// w.Write(message)
-			if err := json.NewEncoder(w).Encode(message); err != nil {
-				return
-			}
-
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				// w.Write(<-c.send)
-				if err := json.NewEncoder(w).Encode(<-c.send); err != nil {
-					return
-				}
-			}
-
-			if err := w.Close(); err != nil {
+			if err := c.conn.WriteJSON(message); err != nil {
+				fmt.Println(err)
 				return
 			}
 		case <-ticker.C:
