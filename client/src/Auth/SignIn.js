@@ -19,6 +19,8 @@ const defaultTheme = createTheme();
 
 export default function SignIn() {
   const navigate = useNavigate();
+
+  // automatically signin if user has already signed in with valid token
   useEffect(() => {
     const authUserStatus = async () => {
       const token = localStorage.getItem("token");
@@ -43,6 +45,8 @@ export default function SignIn() {
     value: "",
   });
   const [buttonDisabled, setButtonDisabled] = useState(false);
+
+  // handle sign in logic
   const handleSubmit = async (event) => {
     event.preventDefault();
     setButtonDisabled(true);

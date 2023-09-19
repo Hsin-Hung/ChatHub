@@ -7,6 +7,7 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 import { createMessageTemplate } from "../utils/message";
 import { CHAT_SERVER_WS_URL } from "../utils/constants";
 
+// reducer for updating message history
 function reducer(state, action) {
   let newState;
   let newMessage = action.payload;
@@ -53,6 +54,7 @@ export default function Chat() {
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
 
+  // update message history when receive new messages from websocket
   useEffect(() => {
     if (lastJsonMessage !== null) {
       if (lastJsonMessage.Id in chatState[1]) {
@@ -65,6 +67,7 @@ export default function Chat() {
 
   const [input, setInput] = React.useState("");
 
+  // send message to group chat
   const handleSend = () => {
     if (input.trim() !== "") {
       setInput("");

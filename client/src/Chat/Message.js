@@ -20,6 +20,8 @@ const theme = createTheme({
 
 export default function Message({ message, username, onSendJsonMessage }) {
   const isSelf = message.Sender === username;
+
+  // handle up vote logic
   const handleUpVote = () => {
     let jsonMessage = createMessageTemplate();
     jsonMessage.id = message.Id;
@@ -28,6 +30,7 @@ export default function Message({ message, username, onSendJsonMessage }) {
     onSendJsonMessage(jsonMessage);
   };
 
+  // handle down vote logic
   const handleDownVote = () => {
     let jsonMessage = createMessageTemplate();
     jsonMessage.id = message.Id;

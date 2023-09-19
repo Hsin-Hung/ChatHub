@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	db.ConnectDB()
+	db.ConnectDB() // connect to database
 	r := gin.New()
 	r.Use(middlewares.CorsMiddleware())
 	r.GET("/", controllers.SignIn)

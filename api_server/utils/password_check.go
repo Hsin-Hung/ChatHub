@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Validate user input for username and password
 func UserInputValidator(username string, password string) error {
 
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {

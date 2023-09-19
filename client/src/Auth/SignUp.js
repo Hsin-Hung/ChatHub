@@ -24,6 +24,8 @@ export default function SignUp() {
     value: "",
   });
   const [buttonDisabled, setButtonDisabled] = useState(false);
+
+  // handle sign up logic
   const handleSubmit = async (event) => {
     event.preventDefault();
     setButtonDisabled(true);

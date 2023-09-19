@@ -18,6 +18,8 @@ export default function ChatInfo() {
     value: "",
   });
   const [chatRoomInfo, setChatRoomInfo] = useState({ online: 0 });
+
+  // fetch and display chat room info: online member count
   useEffect(() => {
     const fetchChatInfo = async () => {
       const token = localStorage.getItem("token");
