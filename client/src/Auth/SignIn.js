@@ -22,9 +22,10 @@ export default function SignIn() {
   useEffect(() => {
     const authUserStatus = async () => {
       const token = localStorage.getItem("token");
-      if (token != null) {
+      const username = localStorage.getItem("username");
+      if (token != null && username != null) {
         try {
-          const res = await authUser(token);
+          const res = await authUser(username, token);
           if (res.status === 200) {
             navigate("/home");
           }

@@ -31,7 +31,7 @@ export default function Chat() {
   const token = localStorage.getItem("token");
 
   const [socketUrl, setSocketUrl] = useState(
-    `ws://localhost:8081/ws?token=${token}`
+    `ws://localhost:8081/ws?token=${token}&username=${username}`
   );
   const [chatState, dispatch] = useReducer(reducer, [[], {}]);
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(

@@ -21,8 +21,9 @@ export default function ChatInfo() {
   useEffect(() => {
     const fetchChatInfo = async () => {
       const token = localStorage.getItem("token");
+      const username = localStorage.getItem("username");
       try {
-        const res = await getChatRoomInfo(token);
+        const res = await getChatRoomInfo(username, token);
         setChatRoomInfo({ online: res.data.online });
       } catch (err) {
         let errResponse = err.message;

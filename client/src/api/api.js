@@ -26,10 +26,14 @@ export const signIn = async (username, password) => {
   );
 };
 
-export const authUser = async (token) => {
-  return api_instance.get("/user", { params: { token: token } });
+export const authUser = async (username, token) => {
+  return api_instance.get("/user", {
+    params: { token: token, username, username },
+  });
 };
 
-export const getChatRoomInfo = async (jwt) => {
-  return chat_instance.get("/info", { params: { token: jwt } });
+export const getChatRoomInfo = async (username, token) => {
+  return chat_instance.get("/info", {
+    params: { token: token, username, username },
+  });
 };
