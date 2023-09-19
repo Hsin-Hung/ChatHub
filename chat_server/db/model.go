@@ -49,6 +49,18 @@ func StoreMessage(message Message) error {
 }
 
 // update the votes of given message in the database
+//
+// The first db operation decrement the votesCount and removes the client from the votes array
+// if the client has already voted.
+// The second db operation increment the votesCount and adds the client to the votes array,
+// if the client hasn't voted yet.
+//
+// If the first db operation passes, then we don't need to execute the second db operation.
+// If the first db failed with document not found, it means that the client has not voted and
+// therefore we can proceed and execute the second db operation.
+//
+// The above logic will always leave a consistent view of the votes count and array. There is
+// no situation where a person can vote multiple times.
 func UpdateVotes(message Message) (Message, error) {
 
 	var votesCount string
@@ -66,24 +78,28 @@ func UpdateVotes(message Message) (Message, error) {
 	coll := GetDBClient().Database("chat").Collection("messages")
 	var update bson.D
 	filter := bson.D{{"_id", message.Id}, {votesArray, message.Sender}}
-	// filter["_id"] = message.Id
-	// filter[votesArray] = message.Sender
 	update = bson.D{{"$inc", bson.D{{votesCount, -1}}}, {"$pull", bson.D{{votesArray, message.Sender}}}}
 	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return the new updated message
 	var new_message Message
 	err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
+
 	if err != nil {
-		fmt.Println(err)
-		filter := bson.D{{"_id", message.Id}}
-		update = bson.D{{"$inc", bson.D{{votesCount, 1}}}, {"$push", bson.D{{votesArray, message.Sender}}}}
-		opts := options.FindOneAndUpdate().SetReturnDocument(1) // return the new updated message
-		err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
-		if err != nil {
+		if err.Error() == mongo.ErrNoDocuments.Error() {
 			fmt.Println(err)
-			return Message{}, err
+			filter := bson.D{{"_id", message.Id}, {votesArray, bson.D{{"$nin", bson.A{message.Sender}}}}}
+			update = bson.D{{"$inc", bson.D{{votesCount, 1}}}, {"$push", bson.D{{votesArray, message.Sender}}}}
+			opts := options.FindOneAndUpdate().SetReturnDocument(1) // return the new updated message
+			err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
+			if err != nil {
+				fmt.Println(err)
+				return Message{}, err
+			}
+			fmt.Printf("Update document vote with _id: %v\n", new_message)
+			return new_message, nil
 		}
-		fmt.Printf("Update document vote with _id: %v\n", new_message)
-		return new_message, nil
+
+		return Message{}, err
+
 	}
 
 	return new_message, nil
