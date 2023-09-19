@@ -16,7 +16,8 @@ import (
 )
 
 func main() {
-	db.ConnectDB()    // connect to database
+	db.ConnectDB() // connect to database
+	db.CreateIndexes()
 	db.ConnectRedis() // connect to redis pub/sub
 	hub := chat.NewHub()
 	go hub.Run()                                // run chat room

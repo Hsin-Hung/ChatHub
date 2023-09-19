@@ -70,8 +70,10 @@ export default function Chat() {
         id: "",
         content: input,
         sender: username,
-        upvotes: 0,
-        downvotes: 0,
+        upvotesCount: 0,
+        downvotesCount: 0,
+        upvotes: [],
+        downvotes: [],
         timestamp: -1,
       });
     }
@@ -95,7 +97,7 @@ export default function Chat() {
           <Message
             key={idx}
             message={message}
-            isSelf={message.Sender === username}
+            username={username}
             onSendJsonMessage={sendJsonMessage}
           />
         ))}

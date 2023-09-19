@@ -72,7 +72,11 @@ func (c *Client) readPump() {
 		}
 		// messages sent from client already with a message id are for votes
 		if message.Id != "" {
-			new_message, _ := db.UpdateVotes(message)
+			new_message, err := db.UpdateVotes(message)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 			c.hub.publish <- new_message
 		} else {
 			id, err := utils.Generate_id() // generate messsage id for new message

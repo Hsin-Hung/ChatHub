@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,12 +11,14 @@ import (
 )
 
 type Message struct {
-	Id        string `bson:"_id"`
-	Content   string `bson:"content"`
-	Sender    string `bson:"sender"`
-	Upvotes   uint   `bson:"upvotes"`
-	Downvotes uint   `bson:"downvotes"`
-	Timestamp int64  `bson:"timestamp"`
+	Id             string   `bson:"_id"`
+	Content        string   `bson:"content"`
+	Sender         string   `bson:"sender"`
+	UpvotesCount   uint     `bson:"upvotesCount"`
+	DownvotesCount uint     `bson:"downvotesCount"`
+	Upvotes        []string `bson:"upvotes"`
+	Downvotes      []string `bson:"downvotes"`
+	Timestamp      int64    `bson:"timestamp"`
 }
 
 // get all message history
@@ -48,23 +51,41 @@ func StoreMessage(message Message) error {
 // update the votes of given message in the database
 func UpdateVotes(message Message) (Message, error) {
 
-	coll := GetDBClient().Database("chat").Collection("messages")
-
-	var update bson.D
-	filter := bson.D{{"_id", message.Id}}
-	if message.Upvotes != 0 {
-		update = bson.D{{"$inc", bson.D{{"upvotes", message.Upvotes}}}}
-	} else if message.Downvotes != 0 {
-		update = bson.D{{"$inc", bson.D{{"downvotes", message.Downvotes}}}}
+	var votesCount string
+	var votesArray string
+	if message.UpvotesCount != 0 {
+		votesCount = "upvotesCount"
+		votesArray = "upvotes"
+	} else if message.DownvotesCount != 0 {
+		votesCount = "downvotesCount"
+		votesArray = "downvotes"
+	} else {
+		return Message{}, errors.New("invalid votes")
 	}
+
+	coll := GetDBClient().Database("chat").Collection("messages")
+	var update bson.D
+	filter := bson.D{{"_id", message.Id}, {votesArray, message.Sender}}
+	// filter["_id"] = message.Id
+	// filter[votesArray] = message.Sender
+	update = bson.D{{"$inc", bson.D{{votesCount, -1}}}, {"$pull", bson.D{{votesArray, message.Sender}}}}
 	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return the new updated message
 	var new_message Message
 	err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
 	if err != nil {
-		return Message{}, err
+		fmt.Println(err)
+		filter := bson.D{{"_id", message.Id}}
+		update = bson.D{{"$inc", bson.D{{votesCount, 1}}}, {"$push", bson.D{{votesArray, message.Sender}}}}
+		opts := options.FindOneAndUpdate().SetReturnDocument(1) // return the new updated message
+		err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
+		if err != nil {
+			fmt.Println(err)
+			return Message{}, err
+		}
+		fmt.Printf("Update document vote with _id: %v\n", new_message)
+		return new_message, nil
 	}
 
-	fmt.Printf("Update document vote with _id: %v\n", new_message)
 	return new_message, nil
 
 }

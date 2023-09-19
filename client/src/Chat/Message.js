@@ -17,14 +17,17 @@ const theme = createTheme({
   },
 });
 
-export default function Message({ message, isSelf, onSendJsonMessage }) {
+export default function Message({ message, username, onSendJsonMessage }) {
+  const isSelf = message.Sender === username;
   const handleUpVote = () => {
     onSendJsonMessage({
       id: message.Id,
       content: "",
-      sender: "",
-      upvotes: 1,
-      downvotes: 0,
+      sender: username,
+      upvotesCount: 1,
+      downvotesCount: 0,
+      upvotes: [],
+      downvotes: [],
       timestamp: 0,
     });
   };
@@ -33,9 +36,11 @@ export default function Message({ message, isSelf, onSendJsonMessage }) {
     onSendJsonMessage({
       id: message.Id,
       content: "",
-      sender: "",
-      upvotes: 0,
-      downvotes: 1,
+      sender: username,
+      upvotesCount: 0,
+      downvotesCount: 1,
+      upvotes: [],
+      downvotes: [],
       timestamp: 0,
     });
   };
@@ -79,7 +84,7 @@ export default function Message({ message, isSelf, onSendJsonMessage }) {
             >
               <ThumbUpIcon fontSize="small" />{" "}
               <Typography variant="caption" style={{ marginLeft: 4 }}>
-                {message.Upvotes}
+                {message.UpvotesCount}
               </Typography>
             </IconButton>
             <IconButton
@@ -90,7 +95,7 @@ export default function Message({ message, isSelf, onSendJsonMessage }) {
             >
               <ThumbDownIcon fontSize="small" />
               <Typography variant="caption" style={{ marginLeft: 4 }}>
-                {message.Downvotes}
+                {message.DownvotesCount}
               </Typography>
             </IconButton>
           </ButtonGroup>
