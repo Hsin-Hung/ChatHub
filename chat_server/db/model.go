@@ -18,16 +18,20 @@ type Message struct {
 	Timestamp int64  `bson:"timestamp"`
 }
 
+// get all message history
 func GetMessageHistory() (*mongo.Cursor, error) {
 
 	coll := GetDBClient().Database("chat").Collection("messages")
-	cur, err := coll.Find(context.Background(), bson.D{})
+	filter := bson.D{}
+	opts := options.Find().SetSort(bson.D{{"timestamp", 1}}) // sort the message based on timestamp
+	cur, err := coll.Find(context.Background(), filter, opts)
 	if err != nil {
 		return nil, err
 	}
 	return cur, nil
 }
 
+// store new message into database
 func StoreMessage(message Message) error {
 
 	// Send a ping to confirm a successful connection
@@ -41,6 +45,7 @@ func StoreMessage(message Message) error {
 	return nil
 }
 
+// update the votes of given message in the database
 func UpdateVotes(message Message) (Message, error) {
 
 	coll := GetDBClient().Database("chat").Collection("messages")
@@ -52,11 +57,11 @@ func UpdateVotes(message Message) (Message, error) {
 	} else if message.Downvotes != 0 {
 		update = bson.D{{"$inc", bson.D{{"downvotes", message.Downvotes}}}}
 	}
-	opts := options.FindOneAndUpdate().SetReturnDocument(1)
+	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return the new updated message
 	var new_message Message
 	err := coll.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&new_message)
 	if err != nil {
-		panic(err)
+		return Message{}, err
 	}
 
 	fmt.Printf("Update document vote with _id: %v\n", new_message)
