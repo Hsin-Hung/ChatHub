@@ -5,32 +5,33 @@
 package main
 
 import (
-	"flag"
-	"log"
-
 	"chat-server/chat"
 	"chat-server/middlewares"
+	"log"
+	"net/http"
 
 	"chat-server/db"
 
 	"github.com/gin-gonic/gin"
 )
 
-var addr = flag.String("addr", ":8082", "http service address")
-
 func main() {
-	db.ConnectDB()
-	db.ConnectRedis()
-	flag.Parse()
+	db.ConnectDB()    // connect to database
+	db.ConnectRedis() // connect to redis pub/sub
 	hub := chat.NewHub()
-	go hub.Run()
-	go db.SubscribeMessage(hub.GetSubChannel())
+	go hub.Run()                                // run chat room
+	go db.SubscribeMessage(hub.GetSubChannel()) // run redis message subscrib routine
 
 	r := gin.Default()
+	r.Use(middlewares.CorsMiddleware())
 	r.Use(middlewares.JwtAuthMiddleware())
 	r.GET("/ws", func(c *gin.Context) {
 		chat.ServeWs(hub, c)
 	})
-	log.Fatal(r.Run(*addr))
+	// get chat room info: client count
+	r.GET("/info", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"online": hub.GetClientCount()})
+	})
+	log.Fatal(r.Run("localhost:8081"))
 
 }

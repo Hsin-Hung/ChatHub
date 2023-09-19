@@ -8,7 +8,6 @@ import (
 	"chat-server/db"
 	"chat-server/utils"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -28,11 +27,6 @@ const (
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
-)
-
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
 )
 
 var upgrader = websocket.Upgrader{
@@ -70,31 +64,29 @@ func (c *Client) readPump() {
 	for {
 		var message db.Message
 		err := c.conn.ReadJSON(&message)
-		fmt.Println(err)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				fmt.Println(err)
 			}
 			break
 		}
-		fmt.Println(message)
-		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		// messages sent from client already with a message id are for votes
 		if message.Id != "" {
 			new_message, _ := db.UpdateVotes(message)
 			c.hub.publish <- new_message
 		} else {
-			id, err := utils.Generate_id()
+			id, err := utils.Generate_id() // generate messsage id for new message
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				continue
 			}
 			message.Id = id
 			message.Timestamp = utils.Generate_timestamp()
-
 			if err := db.StoreMessage(message); err != nil {
+				fmt.Println(err)
 				continue
 			}
 			c.hub.publish <- message
-			// c.hub.broadcast <- message
 		}
 
 	}
@@ -138,14 +130,12 @@ func ServeWs(hub *Hub, c *gin.Context) {
 	w, r := c.Writer, c.Request
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan db.Message, 10)}
+	client := &Client{hub: hub, conn: conn, send: make(chan db.Message, 100)}
 	client.hub.register <- client
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
 	go client.writePump()
 	go client.readPump()
 }

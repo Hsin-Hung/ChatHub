@@ -46,6 +46,12 @@ func (h *Hub) GetSubChannel() chan db.Message {
 	return h.broadcast
 }
 
+func (h *Hub) GetClientCount() int {
+
+	return len(h.clients)
+
+}
+
 func (h *Hub) Run() {
 	for {
 		select {
