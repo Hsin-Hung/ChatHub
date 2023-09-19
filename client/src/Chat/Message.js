@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import { createMessageTemplate } from "../utils/message";
 
 const theme = createTheme({
   typography: {
@@ -20,29 +21,19 @@ const theme = createTheme({
 export default function Message({ message, username, onSendJsonMessage }) {
   const isSelf = message.Sender === username;
   const handleUpVote = () => {
-    onSendJsonMessage({
-      id: message.Id,
-      content: "",
-      sender: username,
-      upvotesCount: 1,
-      downvotesCount: 0,
-      upvotes: [],
-      downvotes: [],
-      timestamp: 0,
-    });
+    let jsonMessage = createMessageTemplate();
+    jsonMessage.id = message.Id;
+    jsonMessage.sender = username;
+    jsonMessage.upvotesCount = 1;
+    onSendJsonMessage(jsonMessage);
   };
 
   const handleDownVote = () => {
-    onSendJsonMessage({
-      id: message.Id,
-      content: "",
-      sender: username,
-      upvotesCount: 0,
-      downvotesCount: 1,
-      upvotes: [],
-      downvotes: [],
-      timestamp: 0,
-    });
+    let jsonMessage = createMessageTemplate();
+    jsonMessage.id = message.Id;
+    jsonMessage.sender = username;
+    jsonMessage.downvotesCount = 1;
+    onSendJsonMessage(jsonMessage);
   };
 
   return (

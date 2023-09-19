@@ -1,13 +1,18 @@
 import axios from "axios";
+import {
+  API_SERVER_URL,
+  CHAT_SERVER_URL,
+  AXIOS_TIMEOUT,
+} from "../utils/constants";
 
 const api_instance = axios.create({
-  baseURL: "http://localhost:8080",
-  timeout: 1000,
+  baseURL: API_SERVER_URL,
+  timeout: AXIOS_TIMEOUT,
 });
 
 const chat_instance = axios.create({
-  baseURL: "http://localhost:8081",
-  timeout: 1000,
+  baseURL: CHAT_SERVER_URL,
+  timeout: AXIOS_TIMEOUT,
 });
 
 export const signUp = async (username, password) => {

@@ -4,6 +4,8 @@ import { Box, TextField, Button, Grid } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import Message from "./Message";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import { createMessageTemplate } from "../utils/message";
+import { CHAT_SERVER_WS_URL } from "../utils/constants";
 
 function reducer(state, action) {
   let newState;
@@ -31,7 +33,7 @@ export default function Chat() {
   const token = localStorage.getItem("token");
 
   const [socketUrl, setSocketUrl] = useState(
-    `ws://localhost:8081/ws?token=${token}&username=${username}`
+    `${CHAT_SERVER_WS_URL}?token=${token}&username=${username}`
   );
   const [chatState, dispatch] = useReducer(reducer, [[], {}]);
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
@@ -66,16 +68,10 @@ export default function Chat() {
   const handleSend = () => {
     if (input.trim() !== "") {
       setInput("");
-      sendJsonMessage({
-        id: "",
-        content: input,
-        sender: username,
-        upvotesCount: 0,
-        downvotesCount: 0,
-        upvotes: [],
-        downvotes: [],
-        timestamp: -1,
-      });
+      let jsonMessage = createMessageTemplate();
+      jsonMessage.content = input;
+      jsonMessage.sender = username;
+      sendJsonMessage(jsonMessage);
     }
   };
 
