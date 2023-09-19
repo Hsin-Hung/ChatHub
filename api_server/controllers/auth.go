@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"api-server/db"
-	"log"
+	"api-server/utils"
+	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/gin-contrib/sessions"
+	"api-server/token"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,52 +23,59 @@ type SignInInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func getHash(pwd []byte) string {
+// Get the hash of a password
+func getHash(pwd []byte) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.DefaultCost)
 	if err != nil {
-		log.Println(err)
+		return "", err
 	}
-	return string(hash)
+	return string(hash), nil
 }
 
+// Register a user
 func Register(c *gin.Context) {
-	session := sessions.Default(c)
 	var input RegisterInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "registration failed"})
 		return
 	}
 
 	username := input.Username
-	pass_hash := getHash([]byte(input.Password))
-	err := db.CreateNewUser(username, pass_hash)
+	password := input.Password
 
-	if err != nil {
+	if err := utils.UserInputValidator(username, password); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	session.Set(userkey, username) // In real world usage you'd set this to the users ID
-	if err := session.Save(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+	pass_hash, err := getHash([]byte(password))
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "registration failed"})
+		return
+	}
+	err = db.CreateNewUser(username, pass_hash)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
-	
 
 }
 
-const userkey = "user"
-
+// Sign in a user
 func SignIn(c *gin.Context) {
-	session := sessions.Default(c)
 
 	var input SignInInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect username or password"})
 		return
 	}
 
@@ -75,27 +84,49 @@ func SignIn(c *gin.Context) {
 
 	// Validate form input
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameters can't be empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect username or password"})
 		return
 	}
 
 	dbPass, err := db.ValidateUser(username)
-
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(dbPass), []byte(password))
-	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect username or password"})
 		return
 	}
-	// Save the username in the session
-	session.Set(userkey, username) // In real world usage you'd set this to the users ID
-	if err := session.Save(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+
+	// validate password
+	err = bcrypt.CompareHashAndPassword([]byte(dbPass), []byte(password))
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect username or password"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully authenticated user"})
+
+	// generate JWT token
+	token, err := token.GenerateToken(username)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "sign in failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func CurrentUser(c *gin.Context) {
+
+	username, err := token.ExtractTokenID(c)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	username_sent := c.Query("username")
+	if username == username_sent {
+		c.JSON(http.StatusOK, gin.H{"message": "authorized"})
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	}
+
 }

@@ -9,12 +9,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Replace the placeholder with your Atlas connection string
 const uri = "mongodb://localhost:27017"
 
 var client *mongo.Client
 
-func Connect() {
+// Connect to mongodb
+func ConnectDB() {
 
 	// Use the SetServerAPIOptions() method to set the Stable API version to 1
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -22,7 +22,7 @@ func Connect() {
 
 	// Create a new client and connect to the server
 	var err error
-	client, err = mongo.Connect(context.TODO(), opts)
+	client, err = mongo.Connect(context.Background(), opts)
 
 	if err != nil {
 		panic(err)
@@ -36,6 +36,7 @@ func Connect() {
 	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
 }
 
+// Get MongoDB Client
 func GetClient() *mongo.Client {
 	return client
 }

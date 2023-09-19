@@ -1,22 +1,21 @@
 package main
 
 import (
-
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
-	"api-server/db"
-
 	"api-server/controllers"
+	"api-server/db"
+	"api-server/middlewares"
+	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	db.Connect()
+	db.ConnectDB()
 	r := gin.New()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("mysession", store))
+	r.Use(middlewares.CorsMiddleware())
 	r.GET("/", controllers.SignIn)
 	r.POST("/signup", controllers.Register)
 	r.POST("/signin", controllers.SignIn)
-	r.Run("localhost:8080") 
+	r.GET("/user", controllers.CurrentUser)
+	log.Fatal(r.Run("localhost:8080"))
 }
