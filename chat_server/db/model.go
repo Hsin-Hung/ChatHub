@@ -24,7 +24,7 @@ type Message struct {
 // get all message history
 func GetMessageHistory() (*mongo.Cursor, error) {
 
-	coll := GetDBClient().Database("chat").Collection("messages")
+	coll := GetDBClient().Database("messages").Collection("messages")
 	filter := bson.D{}
 	opts := options.Find().SetSort(bson.D{{"timestamp", 1}}) // sort the message based on timestamp
 	cur, err := coll.Find(context.Background(), filter, opts)
@@ -38,7 +38,7 @@ func GetMessageHistory() (*mongo.Cursor, error) {
 func StoreMessage(message Message) error {
 
 	// Send a ping to confirm a successful connection
-	coll := GetDBClient().Database("chat").Collection("messages")
+	coll := GetDBClient().Database("messages").Collection("messages")
 	result, err := coll.InsertOne(context.Background(), message)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func UpdateVotes(message Message) (Message, error) {
 		return Message{}, errors.New("invalid votes")
 	}
 
-	coll := GetDBClient().Database("chat").Collection("messages")
+	coll := GetDBClient().Database("messages").Collection("messages")
 	var update bson.D
 	filter := bson.D{{"_id", message.Id}, {votesArray, message.Sender}}
 	update = bson.D{{"$inc", bson.D{{votesCount, -1}}}, {"$pull", bson.D{{votesArray, message.Sender}}}}

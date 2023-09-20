@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"api-server/db"
+	"api-server/token"
 	"api-server/utils"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
-
-	"api-server/token"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -111,7 +111,12 @@ func SignIn(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	ws_uri, ok := os.LookupEnv("WS_URI")
+	if !ok {
+		ws_uri = "localhost:8081"
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token, "ws_uri": ws_uri})
 }
 
 func CurrentUser(c *gin.Context) {

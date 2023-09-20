@@ -17,7 +17,7 @@ import (
 
 func main() {
 	db.ConnectDB() // connect to database
-	db.CreateIndexes()
+	// db.CreateIndexes()
 	db.ConnectRedis() // connect to redis pub/sub
 	hub := chat.NewHub()
 	go hub.Run()                                // run chat room
@@ -33,6 +33,6 @@ func main() {
 	r.GET("/info", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"online": hub.GetClientCount()})
 	})
-	log.Fatal(r.Run("localhost:8081"))
+	log.Fatal(r.Run("0.0.0.0:8081"))
 
 }

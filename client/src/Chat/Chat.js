@@ -5,7 +5,6 @@ import SendIcon from "@mui/icons-material/Send";
 import Message from "./Message";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { createMessageTemplate } from "../utils/message";
-import { CHAT_SERVER_WS_URL } from "../utils/constants";
 
 // reducer for updating message history
 function reducer(state, action) {
@@ -32,9 +31,10 @@ function reducer(state, action) {
 export default function Chat() {
   const username = localStorage.getItem("username");
   const token = localStorage.getItem("token");
+  const ws_uri = localStorage.getItem("ws_uri");
 
   const [socketUrl, setSocketUrl] = useState(
-    `${CHAT_SERVER_WS_URL}?token=${token}&username=${username}`
+    `ws://${ws_uri}/ws?token=${token}&username=${username}`
   );
   const [chatState, dispatch] = useReducer(reducer, [[], {}]);
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(

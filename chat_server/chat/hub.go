@@ -57,7 +57,10 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
-			cur, _ := db.GetMessageHistory()
+			cur, err := db.GetMessageHistory()
+			if err != nil {
+				continue
+			}
 			for cur.Next(context.Background()) {
 				// To decode into a struct, use cursor.Decode()
 				var message db.Message

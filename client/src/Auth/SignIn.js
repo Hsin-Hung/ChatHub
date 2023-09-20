@@ -13,7 +13,7 @@ import {
   ThemeProvider,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { signIn, authUser } from "../api/api";
+import { signIn, authUser, createWSInstance } from "../api/api";
 
 const defaultTheme = createTheme();
 
@@ -58,6 +58,8 @@ export default function SignIn() {
       const res = await signIn(username, password);
       localStorage.setItem("username", username);
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("ws_uri", res.data.ws_uri);
+      createWSInstance();
       navigate("/home");
     } catch (err) {
       let errResponse = err.message;
