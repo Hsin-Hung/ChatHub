@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mongodb
+  name: mongodb
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - env:
+            - name: MONGO_INITDB_DATABASE
+              value: mydb
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: admin
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: admin
+          image: mongo
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d
+              name: mongo-initdb
+          name: mongodb
+          ports:
+            - containerPort: 27017
+              hostPort: 27017
+              protocol: TCP
+      volumes:
+        - name: mongo-initdb
+          configMap:
+            name: mongo-initdb-config
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-initdb-config
+data:
+  mongo_init.js: |
+    db.createUser({
+      user: "admin",
+      pwd: "admin",
+      roles: [
+        {
+          role: "readWrite",
+          db: "mydb",
+        },
+      ],
+    });
+
+    db = db.getSiblingDB("users");
+    db.createUser({
+      user: "api",
+      pwd: "api",
+      roles: [
+        {
+          role: "readWrite",
+          db: "users",
+        },],
+      });
+    db.createCollection("users");
+
+    db = db.getSiblingDB("messages");
+    db.createUser({
+      user: "chat",
+      pwd: "chat",
+      roles: [
+        {
+          role: "readWrite",
+          db: "messages",
+        },],
+      });
+    db.createCollection("messages");
+    db.messages.createIndex({ timestamp: 1 });

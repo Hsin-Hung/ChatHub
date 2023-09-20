@@ -9,7 +9,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-ENV DB_URI=mongodb://api:api@mongodb/users \
+ENV DB_URI=mongodb://api:api@mongodb:27017/users \
     WS_URI=localhost:8081
 
 # Copy the source code. Note the slash at the end, as explained in

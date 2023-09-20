@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	log.Println("IM apit server")
 	db.ConnectDB() // connect to database
 	r := gin.New()
 	r.Use(middlewares.CorsMiddleware())

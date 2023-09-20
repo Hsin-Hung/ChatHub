@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +21,7 @@ func ConnectDB() {
 		db_uri = "mongodb://api:api@localhost:27017/users"
 	}
 
-	fmt.Println(db_uri)
+	log.Println(db_uri)
 	// Use the SetServerAPIOptions() method to set the Stable API version to 1
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(db_uri).SetServerAPIOptions(serverAPI)

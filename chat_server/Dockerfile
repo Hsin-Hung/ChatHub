@@ -9,8 +9,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-ENV DB_URI=mongodb://chat:chat@mongodb/messages \
-    REDIS_URI=redis://redis
+ENV DB_URI=mongodb://chat:chat@mongodb:27017/messages \
+    REDIS_URI=redis://redis:6379
 
 # Copy the source code. Note the slash at the end, as explained in
 # https://docs.docker.com/engine/reference/builder/#copy
