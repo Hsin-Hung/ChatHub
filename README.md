@@ -1,7 +1,7 @@
 # ChatHub
 
 ## About The Project
-Implemented a scalable full-stack chat room application that allows real-time group chat and message upvotes and downvotes.
+Implemented a scalable full-stack chat room application that allows real-time group chat and message voting for a 3-day hackathon
 
 ### Basic Features
 * User account creation (sign in / sign up)
@@ -71,6 +71,3 @@ docker compose up
     ```sh
     kubectl apply -f deployment
     ```
-
-### Notes
-After minikube deployment, node port needs to be configured to fully use the chat app through minikube cluster. To test, run the chat app locally through docker compose. Thanks!
